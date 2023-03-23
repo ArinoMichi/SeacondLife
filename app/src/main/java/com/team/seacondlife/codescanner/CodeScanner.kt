@@ -1,36 +1,62 @@
 package com.team.seacondlife.codescanner
 
+import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
+import android.view.Menu
+import android.view.MenuInflater
 import android.view.View
-import android.widget.CheckBox
 import android.widget.TextView
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import com.google.mlkit.common.MlKitException
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
+import com.team.UserDataBase.ScannerSQLiteHelper
+import com.team.UserDataBase.UserSQLiteHelper
 import com.team.seacondlife.R
-import java.util.Locale
 
 /** Demonstrates the code scanner powered by Google Play Services. */
 class CodeScanner : AppCompatActivity() {
 
     private var allowManualInput = true
     private var barcodeResultView: TextView? = null
+    private val dbhelper=UserSQLiteHelper(this)
+    val scandbhelp=ScannerSQLiteHelper(this)
+    var code = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_code_scanner)
         barcodeResultView = findViewById(R.id.barcode_result_view)
 
-    }
+        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
 
-    /*fun onAllowManualInputCheckboxClicked(view: View) {
+        if(scandbhelp.verifyItem("8413402990503") == true) {
+            scandbhelp.addSampleData()
+        }
+    }
+    //to back main
+    override fun onSupportNavigateUp(): Boolean {
+        onBackPressed()
+        return false
+    }
+    /*
+    fun onAllowManualInputCheckboxClicked(view: View) {
         allowManualInput = (view as CheckBox).isChecked
-    }*/
+    }
+     */
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        val inflater: MenuInflater = menuInflater
+        inflater.inflate(R.menu.menu_simple, menu)
+
+        return true
+    }
 
     fun onScanButtonClicked(view: View) {
         val optionsBuilder = GmsBarcodeScannerOptions.Builder()
+
         if (allowManualInput) {
             optionsBuilder.allowManualInput()
         }
@@ -38,7 +64,21 @@ class CodeScanner : AppCompatActivity() {
         gmsBarcodeScanner
             .startScan()
             .addOnSuccessListener { barcode: Barcode ->
-                barcodeResultView!!.text = getSuccessfulMessage(barcode)
+                val text: String = getSuccessfulMessage(barcode)
+                val names=intent?.extras!!.getString("user").toString()
+                val passw=intent?.extras!!.getString("passw").toString()
+                val intent: Intent
+                if (text == "SORRY"){
+                    intent = Intent(this, Sorry::class.java)
+                    intent.putExtra("CODE", code)
+                }
+                else{
+                    dbhelper.UpdateUserPoints(names,passw,dbhelper.getUserPoints(names,passw)+1)
+                    Toast.makeText(this,R.string.addpoint,Toast.LENGTH_LONG).show()
+                    intent = Intent(this, ScannerResult::class.java)
+                    intent.putExtra("TEXT", text)
+                }
+                startActivity(intent)
             }
             .addOnFailureListener { e: Exception -> barcodeResultView!!.text = getErrorMessage(e) }
             .addOnCanceledListener {
@@ -70,13 +110,17 @@ class CodeScanner : AppCompatActivity() {
 
          */
 
-        var barcodeValue = ""
-        when(barcode.displayValue){
-            "8413402990503" -> barcodeValue = "BOTELLA DE PLÁSTICO (SAN JOAQUÍN)\nCONTENEDOR AMARILLO"
-            else -> barcodeValue = "ESTE PRODUCTO TODAVÍA NO ESTÁ EN NUESTRA BASE DE DATOS"
+        var text = ""
+        code = barcode.displayValue!!
+
+        if(scandbhelp.verifyItem(code) == true){
+            text = scandbhelp.getName(code) + "\nCONTENEDOR: "+scandbhelp.getType(code)
+        }
+        else{
+            text = "SORRY"
         }
 
-        return barcodeValue
+        return text
     }
 
     private fun getErrorMessage(e: Exception): String? {

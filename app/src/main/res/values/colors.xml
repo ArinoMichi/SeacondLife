@@ -4,14 +4,14 @@
     <color name="white">#FFFFFFFF</color>
 
     <!-- Colores nuestros-->
-    <color name="navy">#03045E</color>
+    <color name="navy">#002f78</color>
     <color name="darkblue">#0077B6</color>
     <color name="blue">#00B4D8</color>
     <color name="lightblue">#90E0EF</color>
     <color name="verylightblue">#CAF0F8</color>
     <color name="transparent_white">#B3FFFFFF</color>
     <color name="grey">#808080</color>
-    <color name="green">#35a45f</color>
+    <color name="green">#35a48f</color>
     <color name="colorAccent">#FFFFFFFF</color>
 
     <color name="transparent_grey">#575657</color>
